@@ -111,9 +111,6 @@ func (p *packageParser) Parse() (*Package, error) {
 
 func (p *packageParser) parseFile(file *ast.File) {
 	ast.Inspect(file, func(node ast.Node) bool {
-		x := file
-		_ = x // FIXME
-
 		switch nodeType := node.(type) {
 		case *ast.GenDecl:
 			p.parseGenDecl(nodeType)

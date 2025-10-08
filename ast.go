@@ -15,22 +15,9 @@ type Node interface {
 
 // Supported AST nodes.
 var (
-	_ Node = (*NodeInterface)(nil)
 	_ Node = (*NodeStruct)(nil)
 	_ Node = (*NodeType)(nil)
 )
-
-// NodeInterface represents a Go interface.
-type NodeInterface struct {
-	Name string
-	Doc  string
-
-	// TODO: Add methods/functions.
-}
-
-func (n *NodeInterface) GetName() string {
-	return n.Name
-}
 
 // NodeStruct represents a Go struct.
 type NodeStruct struct {
