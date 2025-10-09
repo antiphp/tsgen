@@ -31,7 +31,6 @@ func NewParser(cfg Config) *Parser {
 
 // Parse parses the given package names.
 func (p *Parser) Parse(pkgNames ...string) ([]*Package, error) {
-	// Let Go do the heavy lifting of loading packages and their dependencies.
 	pkgs, err := packages.Load(&packages.Config{
 		Mode: packages.NeedName |
 			packages.NeedFiles |
@@ -44,13 +43,11 @@ func (p *Parser) Parse(pkgNames ...string) ([]*Package, error) {
 		return nil, fmt.Errorf("loading packages: %w", err)
 	}
 
-	// Create a parser for each package and its dependencies.
 	pkgParsers := make([]*packageParser, 0, len(pkgs))
 	for _, pkg := range pkgs {
 		pkgParsers = append(pkgParsers, p.newPackageParsers(pkg)...)
 	}
 
-	// Parse all packages into our simplified ast.
 	outPkgs := make([]*Package, 0, len(pkgParsers))
 	for _, pkgParser := range pkgParsers {
 		outPkg, err := pkgParser.Parse()
@@ -59,6 +56,7 @@ func (p *Parser) Parse(pkgNames ...string) ([]*Package, error) {
 		}
 		outPkgs = append(outPkgs, outPkg)
 	}
+
 	return outPkgs, nil
 }
 
@@ -99,7 +97,7 @@ func (p *packageParser) Parse() (*Package, error) {
 	}
 
 	p.out = &Package{
-		Name: p.pkg.Name,
+		Name: p.pkg.PkgPath,
 	}
 
 	for _, file := range p.pkg.Syntax {
@@ -122,17 +120,26 @@ func (p *packageParser) parseFile(file *ast.File) {
 }
 
 func (p *packageParser) parseGenDecl(decl *ast.GenDecl) {
-	switch decl.Tok {
-	case token.TYPE:
-		for _, spec := range decl.Specs {
-			switch specType := spec.(type) {
-			case *ast.TypeSpec:
-				p.parseTypeSpec(specType)
+	for _, spec := range decl.Specs {
+		switch specType := spec.(type) {
+		case *ast.TypeSpec:
+			p.parseTypeSpec(specType)
+
+		case *ast.ValueSpec:
+			switch decl.Tok {
+			case token.VAR:
+				//panic("not implemented")
+
+			case token.CONST:
+				//p.parseConstSpec(specType)
+
 			default:
-				panic("not implemented")
+				//panic("not implemented")
 			}
+
+		default:
+			//panic("not implemented")
 		}
-	default:
 	}
 }
 
@@ -197,18 +204,23 @@ func (p *packageParser) parseTypeStruct(spec *ast.TypeSpec, expr *ast.StructType
 	}
 
 	for _, f := range expr.Fields.List {
-		if f.Names == nil {
-			// TODO: Embedded.
+		tags := p.parseTags(f.Tag)
+		if tags.JSON("-") {
+			continue
+		}
+
+		if f.Names == nil || tags.JSON("inline") {
+			node.Fields = append(node.Fields, &Field{
+				Doc:   p.Doc(f.Doc),
+				Type:  p.parseType(f.Type),
+				Tags:  tags,
+				Embed: true,
+			})
 			continue
 		}
 
 		name = p.Names(f.Names...)
 		if !ast.IsExported(name) {
-			continue
-		}
-
-		tags := p.parseTags(f.Tag)
-		if tags.JSON("-") {
 			continue
 		}
 

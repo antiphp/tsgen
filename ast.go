@@ -5,12 +5,15 @@ import "strings"
 // Package represents a Go package.
 type Package struct {
 	Name  string
+	Doc   string
 	Nodes []Node
 }
 
 // Node represents a Go AST node.
 type Node interface {
 	GetName() string
+	GetKind() string
+	GetRefs() []*TypeReference
 }
 
 // Supported AST nodes.
@@ -30,6 +33,20 @@ func (n *NodeStruct) GetName() string {
 	return n.Name
 }
 
+func (n *NodeStruct) GetKind() string {
+	return "type:struct"
+}
+
+func (n *NodeStruct) GetRefs() []*TypeReference {
+	refs := make([]*TypeReference, 0, len(n.Fields))
+	for _, f := range n.Fields {
+		if ref, ok := f.Type.(*TypeReference); ok {
+			refs = append(refs, ref)
+		}
+	}
+	return refs
+}
+
 // NodeType represents a Go type alias (primitive or complex).
 type NodeType struct {
 	Name string
@@ -42,11 +59,21 @@ func (n *NodeType) GetName() string {
 	return n.Name
 }
 
+func (n *NodeType) GetKind() string {
+	return "type:other"
+}
+
+func (n *NodeType) GetRefs() []*TypeReference {
+	return nil
+}
+
 // Field represents a struct field.
 type Field struct {
 	Name string
 	Doc  string
 	Tags Tags
+
+	Embed bool
 
 	Type Type
 }

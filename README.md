@@ -5,13 +5,14 @@ This is the incomplete version of a TypeScript code generator. It converts Go st
 ## What's left to do
 
 - [x] Parser for a simplified Go AST (Abstract Syntax Tree)
-  - [ ] Handle embedded structs
-- [ ] Resolver for the dependencies
-- [ ] Tree Shaking of unused types
+  - [x] Handle embedded structs
+- [x] Tree Shaking of unused types
+- [ ] Resolver for getting a TypeScript AST
 - [ ] Code generator for TypeScript
 
 and 
 
+- [ ] Error handling
 - [ ] Linting
 - [ ] Tests
 - [ ] Examples
